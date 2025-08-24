@@ -1,0 +1,45 @@
+Edward Khanna
+661-440-4967 | edward.a.khanna@vanderbilt.edu | linkedin.com/in/eddie-khanna/
+EDUCATION
+Vanderbilt University || Nashville, TN August 2024 – Dec 2026
+B.S. Computer Science, Applied Mathematics GPA: 3.933
+Relevant Coursework: Programming & Problem Solving, Program Design & Data Structures, Database
+Management Systems, Multivariable Calculus, Methods of Linear Algebra, Methods of Differential
+Equations, Probability and Statistics for Engineers, Introduction to Financial Mathematics
+SKILLS
+• Java, C/C++, JavaScript, TypeScript, Python, HTML, TailwindCSS, SQL, PostgreSQL, Git, NumPy
+• Web Development, iOS/Android App Development, React, React Native, Flask, Supabase, AWS, Next.js
+WORK EXPERIENCE
+Advanced Health Academy: Software Engineering Intern 03/2025 – Present
+• Analyzed clinical lab data using an AI model to identify patterns and support early detection of health
+conditions.
+• Conducted competitive analysis of the autoimmune HealthTech space by identifying key players, analyzing
+their product offerings, business models, and differentiators.
+Stealth Startup: Full-Stack Software Engineer Intern 01/2025 – 02/2025
+• Built out a robust, user-friendly parking map using Next.js, React, TypeScript, and TailwindCSS.
+• Integrated Mapbox GL for interactive geospatial visualization for dynamic pin sizing based on zoom levels.
+• Implemented real-time data synchronization with Supabase to update the map and webpage with sensor
+updates.
+• Utilized Reverse Geocoding to translate coordinates into human-readable street names that redirected users
+to Google Maps for directions.
+Agricultural Family Fund: Founder & CEO 03/2023 – Present
+• Founder of 501(c)(3) nonprofit partnered with Dignity Health to administer health screenings on site to
+Agricultural workers in the Central Valley for early detection in lifestyle diseases such as diabetes, high blood
+pressure, high cholesterol, and anemia.
+• Has hosted 7 events and administered over 150 tests to agricultural workers at their place of work.
+• Covered by 3 local news stations such as KGET, 23abc, and KVPR.
+• One of 5, out of the 3,360 nonprofits located in Metro-Bakersfield, nominated for the 2024 Beautiful
+Bakersfield Small Nonprofit of The Year award.
+PROJECTS
+Whiteboard Productivity: Web Application 09/2024 – 04/2025
+• Developed and deployed (via Heroku) a full-stack time management web-application utilizing a Flask API
+and a PostgreSQL supporting multiple users.
+• Engineered a customizable timer that bypasses browser throttling, updates task logs, and refreshes the user
+interface, with 20+ hours of runtime
+• Utilizing Chart.js, user data gets populated across 700+ charts per year leading to increased productivity and
+time awareness.
+Whiteboard Productivity (Stopwatch): Mobile Application 11/2025 – 01/2025
+• Built out a RESTful API using Flask, connecting the PostgreSQL database to the mobile app giving pre-
+existing users access on their mobile devices.
+• Designed a minimalist stopwatch using React Native that enables users to track time spent on customized
+tasks while on their mobile devices.

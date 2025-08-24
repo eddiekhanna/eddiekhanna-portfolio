@@ -8,7 +8,7 @@ frontendURL = "http://localhost:5173/"
 # Get the directory where this file is located
 current_dir = os.path.dirname(os.path.abspath(__file__))
 # Construct path to resume.txt relative to this file
-resume_path = os.path.join(current_dir, "..", "me", "resume.txt")
+resume_path = os.path.join(current_dir, "me", "resume.txt")
 
 with open(resume_path, "r", encoding="utf-8") as f:
     resume = f.read()
