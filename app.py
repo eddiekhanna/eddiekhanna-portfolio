@@ -1,10 +1,15 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import os
+import hmac
+from datetime import datetime
+from functools import wraps
 from dotenv import load_dotenv
 from openai import OpenAI
 from system_prompts import get_prompt
 from pushover_complete import PushoverAPI
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from supabase import create_client
 
 
 # Load environment variables
@@ -22,13 +27,130 @@ FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173').rstrip('/')
 
 # Initialize DeepSeek client
 deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
-deepseek = OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com/v1") if deepseek_api_key else None
+# DeepSeek's OpenAI-compatible SDK expects the API root, not the versioned path
+deepseek = OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com") if deepseek_api_key else None
 
 # Enable CORS
 CORS(app)
 
+# Supabase client (used for the thoughts table)
+supabase_url = os.getenv('SUPABASE_URL')
+supabase_key = os.getenv('SUPABASE_SERVICE_KEY')
+supabase = create_client(supabase_url, supabase_key) if supabase_url and supabase_key else None
+
+# Token serializer for the thoughts admin login
+auth_serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'], salt='thoughts-auth')
+TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24  # 24 hours
+
+def verify_auth_token(token: str) -> bool:
+    if not token:
+        return False
+    try:
+        auth_serializer.loads(token, max_age=TOKEN_MAX_AGE_SECONDS)
+        return True
+    except (BadSignature, SignatureExpired):
+        return False
+
+def require_auth(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing or malformed Authorization header'}), 401
+        token = auth_header[len('Bearer '):]
+        if not verify_auth_token(token):
+            return jsonify({'error': 'Invalid or expired token'}), 401
+        return fn(*args, **kwargs)
+    return wrapper
+
 # Global variable to store the system prompt
 system_prompt = None
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    """Verify the admin password and return a signed token."""
+    try:
+        data = request.get_json() or {}
+        password = data.get('password', '')
+        expected = os.getenv('THOUGHTS_PASSWORD')
+
+        if not expected:
+            print("❌ THOUGHTS_PASSWORD not configured")
+            return jsonify({'error': 'Login not configured'}), 500
+
+        if not hmac.compare_digest(password, expected):
+            return jsonify({'error': 'Invalid password'}), 401
+
+        token = auth_serializer.dumps({'role': 'admin'})
+        return jsonify({'token': token, 'expires_in': TOKEN_MAX_AGE_SECONDS})
+
+    except Exception as e:
+        print(f"❌ Login error: {str(e)}")
+        return jsonify({'error': f'Login error: {str(e)}'}), 500
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    """Stateless logout — the frontend discards its token."""
+    return jsonify({'success': True})
+
+@app.route('/api/thoughts', methods=['GET'])
+def list_thoughts():
+    """Public — list thoughts for a given year and month, ordered chronologically."""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Supabase not configured'}), 500
+
+        year = request.args.get('year', type=int)
+        month = request.args.get('month', type=int)
+        if not year or not month:
+            return jsonify({'error': 'year and month query params are required'}), 400
+
+        result = (
+            supabase.table('thoughts')
+            .select('*')
+            .eq('year', year)
+            .eq('month', month)
+            .order('time', desc=False)
+            .execute()
+        )
+        return jsonify({'thoughts': result.data or []})
+
+    except Exception as e:
+        print(f"❌ List thoughts error: {str(e)}")
+        return jsonify({'error': f'Failed to list thoughts: {str(e)}'}), 500
+
+@app.route('/api/thoughts', methods=['POST'])
+@require_auth
+def create_thought():
+    """Auth-required — insert a new thought."""
+    try:
+        if not supabase:
+            return jsonify({'error': 'Supabase not configured'}), 500
+
+        data = request.get_json() or {}
+        text = (data.get('text') or '').strip()
+        time_iso = data.get('time')
+
+        if not text or not time_iso:
+            return jsonify({'error': 'text and time are required'}), 400
+
+        try:
+            dt = datetime.fromisoformat(time_iso.replace('Z', '+00:00'))
+        except ValueError:
+            return jsonify({'error': 'Invalid time format; expected ISO 8601'}), 400
+
+        row = {
+            'text': text,
+            'year': dt.year,
+            'month': dt.month,
+            'time': dt.isoformat(),
+        }
+        result = supabase.table('thoughts').insert(row).execute()
+        return jsonify({'thought': result.data[0] if result.data else None}), 201
+
+    except Exception as e:
+        print(f"❌ Create thought error: {str(e)}")
+        return jsonify({'error': f'Failed to create thought: {str(e)}'}), 500
 
 @app.route('/api/ai/initialize', methods=['POST'])
 def initialize_ai():
